@@ -80,6 +80,7 @@ def explain_anomalies_rolling_std(y, window_size, sigma=1.0):
     avg_list = avg.tolist()
     residual = y - avg
     # Calculate the variation in the distribution of the residual
+
     testing_std = pd.rolling_std(residual, window_size)
     testing_std_as_df = pd.DataFrame(testing_std)
     rolling_std = testing_std_as_df.replace(np.nan,
@@ -91,6 +92,34 @@ def explain_anomalies_rolling_std(y, window_size, sigma=1.0):
                                                                                            y, avg_list, rolling_std)
               if (y_i > avg_i + (sigma * rs_i)) | (y_i < avg_i - (sigma * rs_i))])}
 
+def explain_anomalies_rolling_mean(y, window_size, sigma=1.0):
+    """ Helps in exploring the anamolies using rolling standard deviation
+    Args:
+    -----
+        y (pandas.Series): independent variable
+        window_size (int): rolling window size
+        sigma (int): value for standard deviation
+
+    Returns:
+    --------
+        a dict (dict of 'standard_deviation': int, 'anomalies_dict': (index: value))
+        containing information about the points indentified as anomalies
+    """
+    avg = moving_average(y, window_size)
+    avg_list = avg.tolist()
+    residual = y - avg
+    # Calculate the variation in the distribution of the residual
+
+    testing_std = pd.rolling_mean(residual, window_size)
+    testing_std_as_df = pd.DataFrame(testing_std)
+    rolling_std = testing_std_as_df.replace(np.nan,
+                                  testing_std_as_df.ix[window_size - 1]).round(3).iloc[:,0].tolist()
+    std = np.std(residual)
+    return {'stationary standard_deviation': round(std, 3),
+            'anomalies_dict': collections.OrderedDict([(index, y_i)
+                                                       for index, y_i, avg_i, rs_i in zip(count(),
+                                                                                           y, avg_list, rolling_std)
+              if (y_i > avg_i + (sigma * rs_i)) | (y_i < avg_i - (sigma * rs_i))])}
 
 # This function is repsonsible for displaying how the function performs on the given dataset.
 def plot_results(x, y, window_size, sigma_value=1,
